@@ -1,0 +1,27 @@
+::ng-deep {
+    .ui-card {
+        height: 100%;
+
+        .ui-card-body,
+        & .ui-card-content {
+            height: 100%;
+        }
+    }
+}
+
+.sidebar {
+    ::ng-deep {
+        .ui-card-body {
+            .ui-card-content {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 0;
+                height: 100%;
+
+                .ui-panel {
+                    height: 100%;
+                }
+            }
+        }
+    }
+}

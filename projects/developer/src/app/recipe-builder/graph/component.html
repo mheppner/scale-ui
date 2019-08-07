@@ -1,0 +1,29 @@
+<div class="ui-inputgroup">
+    <button
+        pButton
+        icon="fa fa-search-minus"
+        class="ui-button-secondary ui-inputgroup-addon"
+        [disabled]="zoomLevel <= minZoom"
+        (click)="zoomOut()"
+        type="button">
+    </button>
+    <div style="min-width: 16em; padding: 1.5em 0.5em;">
+        <p-slider
+            [(ngModel)]="zoomLevel"
+            [min]="minZoom"
+            [max]="maxZoom"
+            [step]="zoomStep"
+            [animate]="true">
+        </p-slider>
+    </div>
+    <button
+        pButton
+        icon="fa fa-search-plus"
+        class="ui-button-secondary ui-inputgroup-addon"
+        [disabled]="zoomLevel >= maxZoom"
+        (click)="zoomIn()"
+        type="button">
+    </button>
+</div>
+
+<div #svgArea class="svg-wrapper"></div>

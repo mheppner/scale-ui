@@ -25,6 +25,8 @@ import { ScansComponent } from './system/scans/component';
 import { ScanDetailsComponent } from './system/scans/details.component';
 import { SystemStatusComponent } from './system/status/component';
 import { WorkspacesComponent } from './system/workspaces/component';
+import { RecipeBuilderComponent } from './recipe-builder/component';
+
 
 const routes: Routes = [
     { path: '', pathMatch: 'full', component: DashboardComponent },
@@ -57,7 +59,8 @@ const routes: Routes = [
     { path: 'system/scans/:id', component: ScanDetailsComponent },
     { path: 'system/status', component: SystemStatusComponent },
     { path: 'system/workspaces', component: WorkspacesComponent },
-    { path: 'system/workspaces/:id', component: WorkspacesComponent }
+    { path: 'system/workspaces/:id', component: WorkspacesComponent },
+    { path: 'recipe-builder', component: RecipeBuilderComponent}
 ];
 
 @NgModule({

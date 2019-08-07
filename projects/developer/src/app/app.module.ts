@@ -77,6 +77,8 @@ import { SystemStatusComponent } from './system/status/component';
 import { ThemeModule, lightTheme, darkTheme } from './theme';
 import { TimelineComponent } from './data/timeline/component';
 import { WorkspacesComponent } from './system/workspaces/component';
+import { RecipeBuilderComponent } from './recipe-builder/component';
+import { RecipeBuilderGraphComponent } from './recipe-builder/graph/component';
 
 const appInitializer = (appConfig: AppConfigService) => {
     return () => {
@@ -132,7 +134,9 @@ const appInitializer = (appConfig: AppConfigService) => {
         SubnavComponent,
         SystemStatusComponent,
         TimelineComponent,
-        WorkspacesComponent
+        WorkspacesComponent,
+        RecipeBuilderComponent,
+        RecipeBuilderGraphComponent
     ],
     imports: [
         AccordionModule,
