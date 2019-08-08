@@ -36,6 +36,9 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
     // primary container holding visible items
     private mainContainer: d3.Selection<SVGGElement, any, SVGElement, any>;
 
+    // tooltip element
+    private tooltip: d3.Selection<Element, any, HTMLElement, any>;
+
 
     /** Width of the parent element without margins (usable size). */
     get width(): number {
@@ -55,6 +58,20 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
      * Creates the main SVG element and top-level components.
      */
     private createSvg(): void {
+        // create tooltip
+        this.tooltip = d3.select('body')
+            .append('div')
+            .attr('class', 'tooltip')
+            .style('opacity', 0)
+            .style('position', 'absolute')
+            .style('background-color', 'rgba(0, 0, 0, 0.7)')
+            .style('color', '#eee')
+            .style('padding', '2px')
+            .style('border-radius', '2px')
+            .style('font-size', '0.9em')
+            .style('text-align', 'center')
+            .style('max-width', '80px');
+
         // create svg object
         this.svg = d3.select(this.svgArea.nativeElement).append('svg');
 
@@ -82,6 +99,110 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
             .attr('cy', 300)
             .attr('r', 40)
             .style('fill', '#68b2a1');
+
+        this.drawJob();
+    }
+
+    /**
+     * Draws a job node.
+     */
+    private drawJob(): void {
+        // TODO data
+        const jobName = 'Job 1';
+        const inputs = [
+            { id: 1, name: 'file1' },
+            { id: 2, name: 'file2' }
+        ];
+        const outputs = [
+            { id: 1, name: 'output1' },
+            { id: 2, name: 'output2' },
+            { id: 3, name: 'output3' },
+            { id: 4, name: 'output4' }
+        ];
+
+        // radius of an input/output handle
+        const ioRadius = 5;
+        // width between input/output handles
+        const ioSpacerWidth = ioRadius * 1.7;
+
+        // add a group for this job
+        const group = this.mainContainer
+            .append('g')
+            .attr('class', 'node job');
+
+        // height of the box
+        const height = 36;
+        // max number of input/output nodes
+        const maxNumConn = Math.max(inputs.length, outputs.length);
+        // total width of the box, including spacers and nodes
+        // (spacerWidth * (num + 1)) + (ioDiameter * num)
+        const totalWidth = (ioSpacerWidth * (maxNumConn + 1)) + (ioRadius * 2 * maxNumConn);
+
+        // rectangle for main body
+        group
+            .append('rect')
+            .attr('class', 'body')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', totalWidth)
+            .attr('height', height);
+
+        // label for body
+        group
+            .append('text')
+            .text(jobName)
+            .attr('x', totalWidth / 2)
+            .attr('y', height / 2);
+
+        /**
+         * Draws either input or output node handlers.
+         * @param  data      array-like data to attach to the io node
+         * @param  yPos      the offset of where these nodes should be drawn
+         * @param  cssClass  the css class for these nodes
+         * @return           the shapes that were drawn
+         */
+        const drawIONodes = (data: any, yPos: number, cssClass: string): d3.Selection<d3.BaseType, any, SVGGElement, any> => {
+            const shapes = group.selectAll(`.${cssClass}`)
+                .data(data, d => d['id']);
+            shapes.enter().append('circle')
+                .attr('r', ioRadius)
+                .attr('cx', (d, idx, allData) => {
+                    // total of all spacer between io nodes
+                    // spacerWidth + n(2 * r)
+                    const spacerWidth = (ioSpacerWidth + (2 * ioRadius)) * idx;
+                    // x position of this node
+                    const xPos = spacerWidth + (ioRadius + ioSpacerWidth);
+
+                    // total width of all io nodes, spaces included
+                    const inputsWidth = (ioSpacerWidth * (allData.length + 1)) + (2 * ioRadius * allData.length);
+                    // offset to center all io nodes
+                    const offset = (totalWidth - inputsWidth) / 2;
+                    return xPos + offset;
+                })
+                .attr('cy', yPos)
+                .attr('class', cssClass)
+                .on('mouseover', d => {
+                    this.tooltip.transition()
+                        .duration(200)
+                        .style('opacity', 0.9);
+                    this.tooltip.html(d['name'])
+                        .style('left', `${d3.event.pageX + ioRadius}px`)
+                        .style('top', `${d3.event.pageY + ioRadius}px`);
+                })
+                .on('mouseout', d => {
+                    this.tooltip.transition()
+                        .duration(200)
+                        .style('opacity', 0);
+                });
+            shapes.exit().remove();
+            return shapes;
+        };
+
+        // draw input nodes
+        drawIONodes(inputs, 0, 'input');
+
+        // draw output nodes
+        drawIONodes(outputs, height, 'output');
     }
 
     /**
