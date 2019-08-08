@@ -39,6 +39,8 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
     // tooltip element
     private tooltip: d3.Selection<Element, any, HTMLElement, any>;
 
+    private readonly ioRadius = 5;
+
 
     /** Width of the parent element without margins (usable size). */
     get width(): number {
@@ -101,6 +103,31 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
             .style('fill', '#68b2a1');
 
         this.drawJob();
+        this.drawConditional();
+    }
+
+    /**
+     * Draws a conditional node.
+     */
+    private drawConditional(): void {
+        // add a group for this job
+        const group = this.mainContainer
+            .append('g')
+            .attr('class', 'node condition');
+
+        // height of the box
+        const height = 36;
+        const width = 36;
+
+        // rectangle for main body
+        group
+            .append('rect')
+            .attr('class', 'body')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', width)
+            .attr('height', height)
+            .attr('transform', 'rotate(30)');
     }
 
     /**
@@ -120,10 +147,8 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
             { id: 4, name: 'output4' }
         ];
 
-        // radius of an input/output handle
-        const ioRadius = 5;
         // width between input/output handles
-        const ioSpacerWidth = ioRadius * 1.7;
+        const ioSpacerWidth = this.ioRadius * 1.7;
 
         // add a group for this job
         const group = this.mainContainer
@@ -136,7 +161,7 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
         const maxNumConn = Math.max(inputs.length, outputs.length);
         // total width of the box, including spacers and nodes
         // (spacerWidth * (num + 1)) + (ioDiameter * num)
-        const totalWidth = (ioSpacerWidth * (maxNumConn + 1)) + (ioRadius * 2 * maxNumConn);
+        const totalWidth = (ioSpacerWidth * (maxNumConn + 1)) + (this.ioRadius * 2 * maxNumConn);
 
         // rectangle for main body
         group
@@ -165,16 +190,16 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
             const shapes = group.selectAll(`.${cssClass}`)
                 .data(data, d => d['id']);
             shapes.enter().append('circle')
-                .attr('r', ioRadius)
+                .attr('r', this.ioRadius)
                 .attr('cx', (d, idx, allData) => {
                     // total of all spacer between io nodes
                     // spacerWidth + n(2 * r)
-                    const spacerWidth = (ioSpacerWidth + (2 * ioRadius)) * idx;
+                    const spacerWidth = (ioSpacerWidth + (2 * this.ioRadius)) * idx;
                     // x position of this node
-                    const xPos = spacerWidth + (ioRadius + ioSpacerWidth);
+                    const xPos = spacerWidth + (this.ioRadius + ioSpacerWidth);
 
                     // total width of all io nodes, spaces included
-                    const inputsWidth = (ioSpacerWidth * (allData.length + 1)) + (2 * ioRadius * allData.length);
+                    const inputsWidth = (ioSpacerWidth * (allData.length + 1)) + (2 * this.ioRadius * allData.length);
                     // offset to center all io nodes
                     const offset = (totalWidth - inputsWidth) / 2;
                     return xPos + offset;
@@ -186,8 +211,8 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
                         .duration(200)
                         .style('opacity', 0.9);
                     this.tooltip.html(d['name'])
-                        .style('left', `${d3.event.pageX + ioRadius}px`)
-                        .style('top', `${d3.event.pageY + ioRadius}px`);
+                        .style('left', `${d3.event.pageX + this.ioRadius}px`)
+                        .style('top', `${d3.event.pageY + this.ioRadius}px`);
                 })
                 .on('mouseout', d => {
                     this.tooltip.transition()
