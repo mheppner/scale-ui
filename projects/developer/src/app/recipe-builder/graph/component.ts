@@ -110,10 +110,32 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
      * Draws a conditional node.
      */
     private drawConditional(): void {
+        const node = [{
+            x: 0,
+            y: 0
+        }];
+
         // add a group for this job
-        const group = this.mainContainer
+        const group = this.mainContainer.selectAll('.condition')
+            .data(node)
+            .enter()
             .append('g')
-            .attr('class', 'node condition');
+            .attr('class', 'node condition')
+            .call(d3.drag()
+                .on('start', function() {
+                    d3.select(this)
+                        .raise()
+                        .attr('cursor', 'grabbing');
+                })
+                .on('drag', function(d) {
+                    d['x'] = d3.event.x;
+                    d['y'] = d3.event.y;
+                    d3.select(this).attr('transform', `translate(${d3.event.x}, ${d3.event.y})`);
+                })
+                .on('end', function() {
+                    d3.select(this).attr('cursor', 'grab');
+                })
+            );
 
         // height of the box
         const height = 36;
@@ -127,7 +149,27 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
             .attr('y', 0)
             .attr('width', width)
             .attr('height', height)
-            .attr('transform', 'rotate(30)');
+            .attr('transform', 'rotate(45)');
+
+        // draw input node
+        const inputShapes = group.selectAll('.input')
+            .data([0]);
+        inputShapes.enter().append('circle')
+            .attr('r', this.ioRadius)
+            .attr('cx', 0)
+            .attr('cy', 0)
+            .attr('class', 'input');
+        inputShapes.exit().remove();
+
+        // draw output node
+        const outputShapes = group.selectAll('.output')
+            .data([0]);
+        outputShapes.enter().append('circle')
+            .attr('r', this.ioRadius)
+            .attr('cx', 0)
+            .attr('cy', 52)
+            .attr('class', 'output');
+        outputShapes.exit().remove();
     }
 
     /**
