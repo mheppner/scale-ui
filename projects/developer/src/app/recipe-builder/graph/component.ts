@@ -136,6 +136,10 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
     private drawJob(): void {
         // TODO data
         const jobName = 'Job 1';
+        const node = [{
+            x: 0,
+            y: 0
+        }];
         const inputs = [
             { id: 1, name: 'file1' },
             { id: 2, name: 'file2' }
@@ -151,9 +155,26 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
         const ioSpacerWidth = this.ioRadius * 1.7;
 
         // add a group for this job
-        const group = this.mainContainer
+        const group = this.mainContainer.selectAll('job')
+            .data(node)
+            .enter()
             .append('g')
-            .attr('class', 'node job');
+            .attr('class', 'node job')
+            .call(d3.drag()
+                .on('start', function() {
+                    d3.select(this)
+                        .raise()
+                        .attr('cursor', 'grabbing');
+                })
+                .on('drag', function(d) {
+                    d['x'] = d3.event.x;
+                    d['y'] = d3.event.y;
+                    d3.select(this).attr('transform', `translate(${d3.event.x}, ${d3.event.y})`);
+                })
+                .on('end', function() {
+                    d3.select(this).attr('cursor', 'grab');
+                })
+            );
 
         // height of the box
         const height = 36;
