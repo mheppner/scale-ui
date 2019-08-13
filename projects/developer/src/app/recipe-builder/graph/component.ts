@@ -102,6 +102,7 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
             .attr('r', 40)
             .style('fill', '#68b2a1');
 
+        this.drawStart();
         this.drawJob();
         this.drawConditional();
     }
@@ -168,6 +169,75 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
             .attr('r', this.ioRadius)
             .attr('cx', 0)
             .attr('cy', 52)
+            .attr('class', 'output');
+        outputShapes.exit().remove();
+    }
+
+    /**
+     * Draws a start node.
+     */
+    private drawStart(): void {
+        const name = 'Start';
+        const node = [{
+            x: 0,
+            y: 0
+        }];
+
+        // add a group for this job
+        const group = this.mainContainer.selectAll('.start')
+            .data(node)
+            .enter()
+            .append('g')
+            .attr('class', 'node start')
+            .call(d3.drag()
+                .on('start', function() {
+                    d3.select(this)
+                        .raise()
+                        .attr('cursor', 'grabbing');
+                })
+                .on('drag', function(d) {
+                    d['x'] = d3.event.x;
+                    d['y'] = d3.event.y;
+                    d3.select(this).attr('transform', `translate(${d3.event.x}, ${d3.event.y})`);
+                })
+                .on('end', function() {
+                    d3.select(this).attr('cursor', 'grab');
+                })
+            );
+
+        // height of the box
+        const radius = 36;
+
+        // circle for main body
+        group
+            .append('circle')
+            .attr('class', 'body')
+            .attr('r', radius);
+
+        // label
+        group
+            .append('text')
+            .text(name)
+            .attr('x', 0)
+            .attr('y', 0);
+
+        // draw input node
+        const inputShapes = group.selectAll('.input')
+            .data([0]);
+        inputShapes.enter().append('circle')
+            .attr('r', this.ioRadius)
+            .attr('cx', 0)
+            .attr('cy', -1 * radius)
+            .attr('class', 'input');
+        inputShapes.exit().remove();
+
+        // draw output node
+        const outputShapes = group.selectAll('.output')
+            .data([0]);
+        outputShapes.enter().append('circle')
+            .attr('r', this.ioRadius)
+            .attr('cx', 0)
+            .attr('cy', radius)
             .attr('class', 'output');
         outputShapes.exit().remove();
     }
