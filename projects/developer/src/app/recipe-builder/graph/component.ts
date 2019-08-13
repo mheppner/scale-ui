@@ -105,6 +105,7 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
         this.drawStart();
         this.drawJob();
         this.drawConditional();
+        this.drawInput();
     }
 
     /**
@@ -238,6 +239,64 @@ export class RecipeBuilderGraphComponent implements OnInit, OnDestroy, AfterView
             .attr('r', this.ioRadius)
             .attr('cx', 0)
             .attr('cy', radius)
+            .attr('class', 'output');
+        outputShapes.exit().remove();
+    }
+
+    private drawInput(): void {
+        const name = 'Input 1';
+        const node = [{
+            x: 100,
+            y: 100,
+        }];
+
+        // add a group
+        const group = this.mainContainer.selectAll('.input.node')
+            .data(node)
+            .enter()
+            .append('g')
+            .attr('class', 'node input')
+            .call(d3.drag()
+                .on('start', function() {
+                    d3.select(this)
+                        .raise()
+                        .attr('cursor', 'grabbing');
+                })
+                .on('drag', function(d) {
+                    d['x'] = d3.event.x;
+                    d['y'] = d3.event.y;
+                    d3.select(this).attr('transform', `translate(${d3.event.x}, ${d3.event.y})`);
+                })
+                .on('end', function() {
+                    d3.select(this).attr('cursor', 'grab');
+                })
+            );
+
+        const size = 42;
+
+        // add a triangle as the body
+        const triangle = d3.symbol()
+            .size(Math.pow(size, 2))
+            .type(d3.symbolTriangle);
+        group.append('path')
+            .attr('d', triangle)
+            .attr('class', 'body')
+            .attr('transform', 'rotate(60)');
+
+        // label
+        group
+            .append('text')
+            .text(name)
+            .attr('x', 0)
+            .attr('y', -8);
+
+        // draw output node
+        const outputShapes = group.selectAll('.output')
+            .data([0]);
+        outputShapes.enter().append('circle')
+            .attr('r', this.ioRadius)
+            .attr('cx', 0)
+            .attr('cy', size - 10)
             .attr('class', 'output');
         outputShapes.exit().remove();
     }

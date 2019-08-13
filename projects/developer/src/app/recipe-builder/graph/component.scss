@@ -16,7 +16,8 @@
 ::ng-deep {
     .job,
     .condition,
-    .start {
+    .start,
+    .input {
         .body {
             fill: var(--scale-secondary-light);
             fill-opacity: 0.6;
