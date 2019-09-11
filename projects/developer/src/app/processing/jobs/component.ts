@@ -128,6 +128,9 @@ export class JobsComponent implements OnInit, OnDestroy {
                 result.selected =  !!job;
             });
             this.jobs = Job.transformer(data.results);
+
+            // reset the selected jobs when the data changes
+            this.selectedJob = [];
         }, err => {
             this.datatableLoading = false;
             this.messageService.add({severity: 'error', summary: 'Error retrieving jobs', detail: err.statusText});
