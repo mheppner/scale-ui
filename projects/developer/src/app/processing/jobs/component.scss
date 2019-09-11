@@ -10,12 +10,12 @@ label {
 .jobs__header {
     margin-bottom: 10px;
     align-items: flex-end;
-
-    .jobs__controls {
-        button {
-            margin-left: 5px;
-            margin-top: 5px;
-        }
+}
+.jobs__controls {
+    float: right;
+    button {
+        margin-left: 5px;
+        margin-top: 5px;
     }
 }
 .jobs__table {

@@ -1,14 +1,16 @@
+<div class="jobs__controls">
+    <button pButton type="button" class="ui-button-primary" icon="fa fa-repeat" pTooltip="Requeue All Jobs"
+            (click)="requeueAllConfirm()"></button>
+    <button pButton type="button" class="ui-button-primary" icon="fa fa-ban" pTooltip="Cancel All Jobs"
+            (click)="cancelAllConfirm()"></button>
+</div>
+
 <h2><i class="fa fa-cube"></i> Jobs <span *ngIf="count">({{ count }})</span></h2>
+
 <div class="jobs__header flexed space-between">
     <dev-temporal-filter [started]="started" [ended]="ended" (dateFilterApply)="onDateFilterApply($event)"
                          (dateRangeSelected)="onDateRangeSelected($event)">
     </dev-temporal-filter>
-    <div class="jobs__controls">
-        <button pButton type="button" class="ui-button-primary" icon="fa fa-repeat" pTooltip="Requeue All Jobs"
-                (click)="requeueAllConfirm()"></button>
-        <button pButton type="button" class="ui-button-primary" icon="fa fa-ban" pTooltip="Cancel All Jobs"
-                (click)="cancelAllConfirm()"></button>
-    </div>
 </div>
 <p-table [value]="jobs" [columns]="columns" [rows]="datatableOptions.rows" [sortField]="datatableOptions.sortField"
          [sortOrder]="datatableOptions.sortOrder" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
@@ -138,3 +140,47 @@
 <div *ngIf="selectedJobExe">
     <dev-log-viewer [execution]="selectedJobExe" [visible]="logDisplay" (close)="hideExeLog()"></dev-log-viewer>
 </div>
+
+<p-dialog header="Cancel all jobs" [(visible)]="cancelAllJobsDialogVisible">
+    This will cancel all <span class="label label-danger"><strong>{{ jobsToCancel.length }}</strong></span>
+    running and queued jobs. Are you sure that you want to proceed?
+
+    <ul>
+        <li *ngFor="let job of jobsToCancel">
+            <a routerLink="/processing/jobs/{{ job.id }}">
+                {{ job.job_type.title }} v{{ job.job_type.version }}
+            </a>
+        </li>
+    </ul>
+
+    <p-footer>
+        <button type="button" pButton icon="pi pi-check" label="Yes" class="ui-button-danger"
+                (click)="cancelJobs(); cancelAllJobsDialogVisible = false">
+        </button>
+        <button type="button" pButton label="No" class="ui-button-secondary"
+                (click)="cancelAllJobsDialogVisible = false">
+        </button>
+    </p-footer>
+</p-dialog>
+
+<p-dialog header="Requeue all jobs" [(visible)]="requeueAllJobsDialogVisible">
+    This will requeue <span class="label label-danger"><strong>{{ jobsToRequeue.length }}</strong></span>
+    canceled and failed jobs. Are you sure that you want to proceed?
+
+    <ul>
+        <li *ngFor="let job of jobsToRequeue">
+            <a routerLink="/processing/jobs/{{ job.id }}">
+                {{ job.job_type.title }} v{{ job.job_type.version }}
+            </a>
+        </li>
+    </ul>
+
+    <p-footer>
+        <button type="button" pButton icon="pi pi-check" label="Yes" class="ui-button-danger"
+                (click)="requeueJobs(); requeueAllJobsDialogVisible = false">
+        </button>
+        <button type="button" pButton label="No" class="ui-button-secondary"
+                (click)="requeueAllJobsDialogVisible = false">
+        </button>
+    </p-footer>
+</p-dialog>

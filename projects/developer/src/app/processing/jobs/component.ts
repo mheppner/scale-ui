@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Router, ActivatedRoute, Params } from '@angular/router';
 import { LazyLoadEvent, SelectItem } from 'primeng/primeng';
-import { ConfirmationService } from 'primeng/api';
 import { MessageService } from 'primeng/components/common/messageservice';
 import * as moment from 'moment';
 import * as _ from 'lodash';
@@ -20,7 +19,7 @@ import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
     selector: 'dev-jobs',
     templateUrl: './component.html',
     styleUrls: ['./component.scss'],
-    providers: [ConfirmationService]
+    providers: []
 })
 
 export class JobsComponent implements OnInit, OnDestroy {
@@ -86,6 +85,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     subscription: any;
     isMobile: boolean;
 
+    cancelAllJobsDialogVisible = false;
+    jobsToCancel: any = [];
+    requeueAllJobsDialogVisible = false;
+    jobsToRequeue: any = [];
+
     constructor(
         private dataService: DataService,
         private jobsDatatableService: JobsDatatableService,
@@ -93,7 +97,6 @@ export class JobsComponent implements OnInit, OnDestroy {
         private jobTypesApiService: JobTypesApiService,
         private router: Router,
         private route: ActivatedRoute,
-        private confirmationService: ConfirmationService,
         public breakpointObserver: BreakpointObserver,
         private messageService: MessageService
     ) {}
@@ -288,20 +291,16 @@ export class JobsComponent implements OnInit, OnDestroy {
                 this.messageService.add({severity: 'error', summary: 'Error requeuing jobs', detail: err.statusText});
             });
     }
-    cancelJobs(jobsParams?) {
+    /**
+     * Calls the API to cancel jobs specified. If nothing is provided, the jobsToCancel is used.
+     * @param  jobsParams optional params to send to the API directly, defaulting to ids in jobsToCancel
+     */
+    cancelJobs(jobsParams?: any): void {
         this.messageService.add({severity: 'success', summary: 'Job cancellation has been requested'});
         if (!jobsParams) {
             jobsParams = {
-                started: this.datatableOptions.started,
-                ended: this.datatableOptions.ended,
-                error_categories: this.datatableOptions.error_category ? [this.datatableOptions.error_category] : null,
-                status: this.datatableOptions.status === 'RUNNING' || this.datatableOptions.status === 'QUEUED' ?
-                    this.datatableOptions.status :
-                    null,
-                job_type_names: this.datatableOptions.job_type_name ? [this.datatableOptions.job_type_name] : null
+                job_ids: this.jobsToCancel.map(j => j.id)
             };
-            // remove null properties
-            jobsParams = _.pickBy(jobsParams);
         }
         this.jobsApiService.cancelJobs(jobsParams)
             .subscribe(() => {
@@ -325,46 +324,47 @@ export class JobsComponent implements OnInit, OnDestroy {
     onFilterClick(e) {
         e.stopPropagation();
     }
+    /**
+     * Launches the requeue all jobs confirmation window, by first querying all cancelled and failed jobs.
+     */
     requeueAllConfirm() {
         // query for canceled and failed jobs with current params to report an accurate requeue count
         const requeueParams = _.clone(this.datatableOptions);
         requeueParams.status = ['CANCELED', 'FAILED'];
         this.jobsApiService.getJobs(requeueParams)
             .subscribe(data => {
-                this.confirmationService.confirm({
-                    message: `This will requeue <span class="label label-danger"><strong>${data.count}</strong></span> canceled and failed
-                              jobs. Are you sure that you want to proceed?`,
-                    header: 'Requeue All Jobs',
-                    accept: () => {
-                        this.requeueJobs();
-                    },
-                    reject: () => {
-                        console.log('requeue rejected');
-                    }
-                });
+                this.jobsToRequeue = data.results;
+                if (data.results.length) {
+                    this.requeueAllJobsDialogVisible = true;
+                } else {
+                    this.messageService.add({severity: 'info', summary: 'No jobs available to requeue',
+                                             detail: 'There are no cancelled or failed jobs available.'});
+                }
             }, err => {
                 this.messageService.add({severity: 'error', summary: 'Error retrieving jobs', detail: err.statusText});
+                this.jobsToRequeue = [];
             });
     }
-    cancelAllConfirm() {
+    /**
+     * Launches the cancel all jobs confirmation window, by first querying all running and queued jobs.
+     */
+    cancelAllConfirm(): void {
         // query for running and queued jobs with current params to report an accurate cancel count
+        // TODO this result is paged and will used the default page size limit, may want to increase this in the query
         const cancelParams = _.clone(this.datatableOptions);
         cancelParams.status = ['RUNNING', 'QUEUED'];
         this.jobsApiService.getJobs(cancelParams)
             .subscribe(data => {
-                this.confirmationService.confirm({
-                    message: `This will cancel <span class="label label-danger"><strong>${data.count}</strong></span> running and queued
-                              jobs. Are you sure that you want to proceed?`,
-                    header: 'Cancel All Jobs',
-                    accept: () => {
-                        this.cancelJobs();
-                    },
-                    reject: () => {
-                        console.log('cancel rejected');
-                    }
-                });
+                this.jobsToCancel = data.results;
+                if (data.results.length) {
+                    this.cancelAllJobsDialogVisible = true;
+                } else {
+                    this.messageService.add({severity: 'info', summary: 'No jobs available to cancel',
+                                             detail: 'There are no running or queued jobs available.'});
+                }
             }, err => {
                 this.messageService.add({severity: 'error', summary: 'Error retrieving jobs', detail: err.statusText});
+                this.jobsToCancel = [];
             });
     }
     onSelectedJobTypeClick(jobType) {
