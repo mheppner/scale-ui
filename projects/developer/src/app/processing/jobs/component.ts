@@ -325,8 +325,7 @@ export class JobsComponent implements OnInit, OnDestroy {
      */
     requeueAllConfirm() {
         // query for canceled and failed jobs with current params to report an accurate requeue count
-        const requeueParams = _.clone(this.datatableOptions);
-        requeueParams.status = ['CANCELED', 'FAILED'];
+        const requeueParams = {status: ['CANCELED', 'FAILED']};
         this.jobsApiService.getJobs(requeueParams)
             .subscribe(data => {
                 this.jobsToRequeue = data.results;
@@ -351,8 +350,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     cancelAllConfirm(): void {
         // query for running and queued jobs with current params to report an accurate cancel count
         // TODO this result is paged and will used the default page size limit, may want to increase this in the query
-        const cancelParams = _.clone(this.datatableOptions);
-        cancelParams.status = ['RUNNING', 'QUEUED'];
+        const cancelParams = {status: ['RUNNING', 'QUEUED']};
         this.jobsApiService.getJobs(cancelParams)
             .subscribe(data => {
                 this.jobsToCancel = data.results;
