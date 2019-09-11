@@ -42,7 +42,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     dateFormat = environment.dateFormat;
     jobTypes: any;
     jobTypeOptions: SelectItem[];
-    selectedJob: Job;
+    selectedJob: Job[] = [];
     selectedJobType: any = [];
     selectedJobExe: JobExecution;
     selectedRows: any;
@@ -86,8 +86,10 @@ export class JobsComponent implements OnInit, OnDestroy {
     isMobile: boolean;
 
     cancelAllJobsDialogVisible = false;
+    cancelSelectedJobsDialogVisible = false;
     jobsToCancel: any = [];
     requeueAllJobsDialogVisible = false;
+    requeueSelectedJobsDialogVisible = false;
     jobsToRequeue: any = [];
 
     constructor(
@@ -100,6 +102,20 @@ export class JobsComponent implements OnInit, OnDestroy {
         public breakpointObserver: BreakpointObserver,
         private messageService: MessageService
     ) {}
+
+    /**
+     * Filtered jobs from the selected ones matching a cancallable status.
+     */
+    get selectedCancelledJobs(): Job[] {
+        return this.selectedJob.filter(j => j.status === 'RUNNING' || j.status === 'QUEUED');
+    }
+
+    /**
+     * Filtered jobs from the selected ones matching a requeuable status.
+     */
+    get selectedRequeuedJobs(): Job[] {
+        return this.selectedJob.filter(j => j.status === 'CANCELED' || j.status === 'FAILED');
+    }
 
     private updateData() {
         this.datatableLoading = true;
@@ -208,14 +224,20 @@ export class JobsComponent implements OnInit, OnDestroy {
         });
         this.updateOptions();
     }
-    onRowSelect(e) {
-        if (!_.find(this.selectedRows, { data: { id: e.data.id } })) {
-            this.dataService.setSelectedJobRows(e);
+    /**
+     * Event for when the row is clicked to launch job in a new window.
+     * @param e       click event
+     * @param rowData row data for this job
+     */
+    onRowClick(e: any, rowData: any): void {
+        // entire row was selected, navigate user to that job
+        if (!_.find(this.selectedRows, { data: { id: rowData.id } })) {
+            this.dataService.setSelectedJobRows(rowData);
         }
-        if (e.originalEvent.ctrlKey || e.originalEvent.metaKey || e.originalEvent.which === 2) {
-            window.open(`/processing/jobs/${e.data.id}`);
+        if (e.ctrlKey || e.metaKey || e.which === 2) {
+            window.open(`/processing/jobs/${rowData.id}`);
         } else {
-            this.router.navigate([`/processing/jobs/${e.data.id}`]);
+            this.router.navigate([`/processing/jobs/${rowData.id}`]);
         }
     }
     onDateFilterApply(data: any) {
@@ -241,48 +263,16 @@ export class JobsComponent implements OnInit, OnDestroy {
         });
         this.updateOptions();
     }
-    requeueJobs(jobsParams?) {
+    /**
+     * Calls the API to requeue jobs specified. If nothing is provided, the jobsToRequeue is used.
+     * @param jobsParams optional params to send to the API directly, defaulting to ids in jobsToRequeue
+     */
+    requeueJobs(jobsParams?: any): void {
         this.messageService.add({severity: 'success', summary: 'Job requeue has been requested'});
-        let errorCategories = null;
-        if (this.datatableOptions.error_category) {
-            if (Array.isArray(this.datatableOptions.error_category)) {
-                errorCategories = this.datatableOptions.error_category;
-            } else {
-                errorCategories = [this.datatableOptions.error_category];
-            }
-        }
-        let jobTypeNames = null;
-        if (this.datatableOptions.job_type_name) {
-            if (Array.isArray(this.datatableOptions.job_type_name)) {
-                jobTypeNames = this.datatableOptions.job_type_name;
-            } else {
-                jobTypeNames = [this.datatableOptions.job_type_name];
-            }
-        }
-        let status = null;
-        if (this.datatableOptions.status) {
-            if (Array.isArray(this.datatableOptions.status)) {
-                _.forEach(this.datatableOptions.status, s => {
-                    if (s === 'FAILED' || s === 'CANCELED') {
-                        status = s;
-                    }
-                });
-            } else {
-                status = this.datatableOptions.status;
-            }
-        }
         if (!jobsParams) {
             jobsParams = {
-                started: this.datatableOptions.started,
-                ended: this.datatableOptions.ended,
-                error_categories: errorCategories,
-                status: status,
-                job_type_names: jobTypeNames
+                job_ids: this.jobsToRequeue.map(j => j.id)
             };
-            // remove null properties
-            jobsParams = _.pickBy(jobsParams, d => {
-                return d !== null && typeof d !== 'undefined' && d !== '';
-            });
         }
         this.jobsApiService.requeueJobs(jobsParams)
             .subscribe(() => {
@@ -345,6 +335,10 @@ export class JobsComponent implements OnInit, OnDestroy {
                 this.jobsToRequeue = [];
             });
     }
+    requeueSelectedConfirm() {
+        this.requeueSelectedJobsDialogVisible = true;
+        this.jobsToRequeue = this.selectedRequeuedJobs;
+    }
     /**
      * Launches the cancel all jobs confirmation window, by first querying all running and queued jobs.
      */
@@ -366,6 +360,10 @@ export class JobsComponent implements OnInit, OnDestroy {
                 this.messageService.add({severity: 'error', summary: 'Error retrieving jobs', detail: err.statusText});
                 this.jobsToCancel = [];
             });
+    }
+    cancelSelectedConfirm() {
+        this.cancelSelectedJobsDialogVisible = true;
+        this.jobsToCancel = this.selectedCancelledJobs;
     }
     onSelectedJobTypeClick(jobType) {
         _.remove(this.selectedJobType, jobType);

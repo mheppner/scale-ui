@@ -1,7 +1,7 @@
 <div class="jobs__controls">
-    <button pButton type="button" class="ui-button-primary" icon="fa fa-repeat" pTooltip="Requeue All Jobs"
+    <button pButton type="button" class="ui-button-secondary" icon="fa fa-refresh" pTooltip="Requeue All Jobs"
             (click)="requeueAllConfirm()"></button>
-    <button pButton type="button" class="ui-button-primary" icon="fa fa-ban" pTooltip="Cancel All Jobs"
+    <button pButton type="button" class="ui-button-secondary" icon="fa fa-stop" pTooltip="Cancel All Jobs"
             (click)="cancelAllConfirm()"></button>
 </div>
 
@@ -11,14 +11,25 @@
     <dev-temporal-filter [started]="started" [ended]="ended" (dateFilterApply)="onDateFilterApply($event)"
                          (dateRangeSelected)="onDateRangeSelected($event)">
     </dev-temporal-filter>
+
+    <div class="jobs__controls">
+        <button pButton type="button" class="ui-button-primary" icon="fa fa-repeat" pTooltip="Requeue Selected Jobs"
+                [disabled]="!selectedRequeuedJobs.length" (click)="requeueSelectedConfirm()"></button>
+        <button pButton type="button" class="ui-button-primary" icon="fa fa-ban" pTooltip="Cancel Selected Jobs"
+                [disabled]="!selectedCancelledJobs.length" (click)="cancelSelectedConfirm()"></button>
+    </div>
 </div>
+
 <p-table [value]="jobs" [columns]="columns" [rows]="datatableOptions.rows" [sortField]="datatableOptions.sortField"
          [sortOrder]="datatableOptions.sortOrder" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
-         [responsive]="true" resizableColumns="true" selectionMode="single" [(selection)]="selectedJob"
-         (onRowSelect)="onRowSelect($event)" [loading]="datatableLoading" [style]="{'min-height':'300px'}"
+         [responsive]="true" resizableColumns="true" selectionMode="multiple" [(selection)]="selectedJob"
+         [loading]="datatableLoading" [style]="{'min-height':'300px'}"
          [autoLayout]="true" class="jobs__table" #datatable>
     <ng-template pTemplate="header" let-columns>
         <tr>
+            <th style="width: 4em">
+                <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+            </th>
             <th *ngFor="let col of columns" [ngSwitch]="col.field" [pSortableColumn]="col.field"
                 [pSortableColumnDisabled]="col.sortableColumnDisabled || false">
                 {{ col.header }}
@@ -58,7 +69,10 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowData let-columns="columns">
-        <tr [pSelectableRow]="rowData" [ngClass]="rowData.selected ? 'job__selected' : null">
+        <tr (click)="onRowClick($event, rowData)" [ngClass]="rowData.selected ? 'job__selected' : null" class="ui-selectable-row">
+            <td (click)="$event.stopPropagation()">
+                <p-tableCheckbox [value]="rowData"></p-tableCheckbox>
+            </td>
             <td *ngFor="let col of columns" [ngSwitch]="col.field">
                 <span class="ui-column-title">{{ col.header }}</span>
                 <div class="flexed space-between" *ngSwitchCase="'job_type'">
@@ -128,7 +142,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage" let-columns>
         <tr>
-            <td [attr.colspan]="columns.length" class="text-center">
+            <td [attr.colspan]="columns.length + 1" class="text-center">
                 No records found
             </td>
         </tr>
@@ -163,6 +177,28 @@
     </p-footer>
 </p-dialog>
 
+<p-dialog header="Cancel selected jobs" [(visible)]="cancelSelectedJobsDialogVisible">
+    This will cancel the selected <span class="label label-danger"><strong>{{ jobsToCancel.length }}</strong></span>
+    running and queued jobs. Are you sure that you want to proceed?
+
+    <ul>
+        <li *ngFor="let job of jobsToCancel">
+            <a routerLink="/processing/jobs/{{ job.id }}">
+                {{ job.job_type.title }} v{{ job.job_type.version }}
+            </a>
+        </li>
+    </ul>
+
+    <p-footer>
+        <button type="button" pButton icon="pi pi-check" label="Yes" class="ui-button-danger"
+                (click)="cancelJobs(); cancelSelectedJobsDialogVisible = false">
+        </button>
+        <button type="button" pButton label="No" class="ui-button-secondary"
+                (click)="cancelSelectedJobsDialogVisible = false">
+        </button>
+    </p-footer>
+</p-dialog>
+
 <p-dialog header="Requeue all jobs" [(visible)]="requeueAllJobsDialogVisible">
     This will requeue <span class="label label-danger"><strong>{{ jobsToRequeue.length }}</strong></span>
     canceled and failed jobs. Are you sure that you want to proceed?
@@ -181,6 +217,29 @@
         </button>
         <button type="button" pButton label="No" class="ui-button-secondary"
                 (click)="requeueAllJobsDialogVisible = false">
+        </button>
+    </p-footer>
+</p-dialog>
+
+
+<p-dialog header="Requeue selected jobs" [(visible)]="requeueSelectedJobsDialogVisible">
+    This will requeue the selected <span class="label label-danger"><strong>{{ jobsToRequeue.length }}</strong></span>
+    canceled and failed jobs. Are you sure that you want to proceed?
+
+    <ul>
+        <li *ngFor="let job of jobsToRequeue">
+            <a routerLink="/processing/jobs/{{ job.id }}">
+                {{ job.job_type.title }} v{{ job.job_type.version }}
+            </a>
+        </li>
+    </ul>
+
+    <p-footer>
+        <button type="button" pButton icon="pi pi-check" label="Yes" class="ui-button-danger"
+                (click)="requeueJobs(); requeueSelectedJobsDialogVisible = false">
+        </button>
+        <button type="button" pButton label="No" class="ui-button-secondary"
+                (click)="requeueSelectedJobsDialogVisible = false">
         </button>
     </p-footer>
 </p-dialog>
