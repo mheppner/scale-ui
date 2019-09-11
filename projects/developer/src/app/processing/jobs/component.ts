@@ -124,7 +124,7 @@ export class JobsComponent implements OnInit, OnDestroy {
             this.datatableLoading = false;
             this.count = data.count;
             _.forEach(data.results, result => {
-                const job = _.find(this.selectedRows, { data: { id: result.id } });
+                const job = _.find(this.selectedRows, { id: result.id });
                 result.selected =  !!job;
             });
             this.jobs = Job.transformer(data.results);
@@ -231,7 +231,7 @@ export class JobsComponent implements OnInit, OnDestroy {
      */
     onRowClick(e: any, rowData: any): void {
         // entire row was selected, navigate user to that job
-        if (!_.find(this.selectedRows, { data: { id: rowData.id } })) {
+        if (!_.find(this.selectedRows, { id: rowData.id })) {
             this.dataService.setSelectedJobRows(rowData);
         }
         if (e.ctrlKey || e.metaKey || e.which === 2) {
